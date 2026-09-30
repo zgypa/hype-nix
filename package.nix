@@ -22,15 +22,15 @@
 assert lib.assertMsg (lib.versionAtLeast qtbase.version "6.9")
   "Hype requires Qt >= 6.9; use this flake's pinned nixpkgs or a compatible package set.";
 
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   pname = "hype";
   version = "0.4.3";
 
   src = fetchFromGitHub {
     owner = "omacom";
     repo = "hype";
-    # Upstream v0.4.3, pinned to the commit rather than a movable tag.
-    rev = "f9eefda3ee267ad0c747c2456651084f780de02a";
+    # The fixed hash ensures the release tag cannot silently change the source.
+    rev = "v${version}";
     hash = "sha256-GOhNOPuOf4eXcXUZfylJYccUW7vsifAahqOIBzytZ48=";
   };
 

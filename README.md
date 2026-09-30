@@ -3,8 +3,9 @@
 A reusable Nix package and flake for [Hype](https://github.com/omacom/hype),
 the Markdown presentation editor.
 
-The package pins Hype **v0.4.3** at commit
-`f9eefda3ee267ad0c747c2456651084f780de02a` and verifies its source hash.
+The package pins Hype to a release tag and verifies its source hash in
+`package.nix`. Even if the upstream tag moves, the fixed hash prevents its
+contents from silently changing.
 `flake.lock` pins nixpkgs. It includes the Qt/QML and Wayland plugins, the
 desktop launcher, and runtime access to FFmpeg, ffprobe and GNU source-highlight.
 
@@ -132,6 +133,20 @@ The package leaves that variable under your control.
 
 ## Update
 
+The [Update Hype workflow](.github/workflows/update-hype.yml) uses
+[`nix-update`](https://github.com/Mic92/nix-update) to check GitHub releases
+daily (and can be run manually). If a newer stable release exists, it updates
+the version and source hash in `package.nix`, builds and tests with
+`nix flake check`, then commits and pushes to `main`.
+There is no commit when the pinned version is already current. If a build or test
+fails, the workflow stops without pushing; it will retry on the next run.
+The workflow needs GitHub Actions write access to repository contents.
+
+If you consume this flake through another flake's `flake.lock`, update that lock
+file to pick up the new commit (for example, `nix flake update hype` in the
+consumer repository) and rebuild your workstation. A GitHub push alone does not
+change a consumer's locked inputs or install software on its machine.
+
 To update dependencies while keeping Hype's source unchanged:
 
 ```bash
@@ -139,16 +154,14 @@ nix flake update nixpkgs
 nix flake check
 ```
 
-To update Hype, set a new immutable `rev` and matching `version` in `package.nix`.
-Get the new source hash with:
+To update Hype manually, run:
 
 ```bash
-nix store prefetch-file --unpack --json \
-  https://github.com/omacom/hype/archive/NEW_COMMIT.tar.gz
+nix run nixpkgs#nix-update -- hype --flake --use-github-releases
+nix flake check
 ```
 
-Copy the returned `hash` into `package.nix`, run `nix flake check`, and verify the
-GUI on your desktop. Updates may require adjusting dependencies or tests.
+Verify the GUI on your desktop. Updates may require adjusting dependencies or tests.
 
 ## Validation status
 
