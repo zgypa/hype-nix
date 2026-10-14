@@ -24,14 +24,14 @@ assert lib.assertMsg (lib.versionAtLeast qtbase.version "6.9")
 
 stdenv.mkDerivation rec {
   pname = "hype";
-  version = "0.4.3";
+  version = "0.5.0";
 
   src = fetchFromGitHub {
     owner = "omacom";
     repo = "hype";
     # The fixed hash ensures the release tag cannot silently change the source.
     rev = "v${version}";
-    hash = "sha256-GOhNOPuOf4eXcXUZfylJYccUW7vsifAahqOIBzytZ48=";
+    hash = "sha256-eJWHJLDjdNkoGr7+kWgZbAK8hQf2rrxOQsfdPL2S89w=";
   };
 
   nativeBuildInputs = [ qmake wrapQtAppsHook ];
