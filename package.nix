@@ -24,14 +24,14 @@ assert lib.assertMsg (lib.versionAtLeast qtbase.version "6.9")
 
 stdenv.mkDerivation rec {
   pname = "hype";
-  version = "0.5.0";
+  version = "0.6.0";
 
   src = fetchFromGitHub {
     owner = "omacom";
     repo = "hype";
     # The fixed hash ensures the release tag cannot silently change the source.
     rev = "v${version}";
-    hash = "sha256-eJWHJLDjdNkoGr7+kWgZbAK8hQf2rrxOQsfdPL2S89w=";
+    hash = "sha256-lDrDfo0LqGbWD8X7rejOYf9nKqyNNZh6wMlL9wRRJoU=";
   };
 
   nativeBuildInputs = [ qmake wrapQtAppsHook ];
@@ -73,10 +73,11 @@ stdenv.mkDerivation rec {
     export FONTCONFIG_FILE=${makeFontsConf {
       fontDirectories = [ dejavu_fonts ];
     }}
-    substitute tests/test_cli.py test-installed-cli.py \
+    # Keep the script beside its fixtures, which it resolves via __file__.
+    substituteInPlace tests/test_cli.py \
       --replace-fail "APP = Path(__file__).resolve().parents[1] / 'build/hype'" \
       "APP = Path('$out/bin/hype')"
-    python3 test-installed-cli.py -v
+    python3 tests/test_cli.py -v
     runHook postInstallCheck
   '';
 

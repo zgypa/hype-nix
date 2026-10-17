@@ -165,23 +165,18 @@ Verify the GUI on your desktop. Updates may require adjusting dependencies or te
 
 ## Validation status
 
-Validated on 2026-09-29 with Nix 2.28.3:
+Validated Hype 0.6.0 on 2026-10-17 with Nix 2.35.3 in an `x86_64-linux`
+container:
 
 - The source hash was verified with Nix's fetcher.
 - `nix flake check --no-build --all-systems` passed for both exposed platforms.
-- `nix build --dry-run` resolved the x86-64 build dependency closure successfully.
-- The Qt qmake and application-wrapper hooks were inspected against the locked
-  nixpkgs source.
+- `nix flake check -L` compiled the package and passed all 11 upstream headless
+  CLI tests against the installed executable, including the media fixture test,
+  PNG rendering and PDF/PowerPoint export.
 
-**Compilation, execution of the bundled tests and GUI use have not been
-verified.** The delivery environment supports Nix evaluation but lacks a usable
-standard Nix store and disallows the namespaces needed to mount one temporarily.
-Run `nix flake check` and `nix run . -- open` on your NixOS machine before treating
-the package as build-tested. The test phase is included in the derivation; it has
-not been run here.
-
-The flake exposes `x86_64-linux` and `aarch64-linux`. An exposed platform is not
-a claim that its build has been tested on real hardware.
+**GUI use and the `aarch64-linux` build have not been verified.** Run
+`nix run . -- open` on your desktop to check the graphical editor; run
+`nix flake check` on an ARM64 Linux machine to validate that platform's build.
 
 ## License
 
