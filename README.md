@@ -142,6 +142,14 @@ There is no commit when the pinned version is already current. If a build or tes
 fails, the workflow stops without pushing; it will retry on the next run.
 The workflow needs GitHub Actions write access to repository contents.
 
+The updater runs in `devShells.<system>.maintenance`: both `nix-update` and its
+Nix subprocesses come from `flake.lock`, not the machine's `nixpkgs` registry.
+This avoids daily toolchain changes independently of the package pin. In
+particular, Nix 2.35 copies flake sources lazily, while nix-update 1.16.0 assumes
+that the path returned by `nix flake metadata` already exists in the store.
+The locked maintenance environment uses Nix 2.34.8; recheck the update command
+when updating nixpkgs.
+
 If you consume this flake through another flake's `flake.lock`, update that lock
 file to pick up the new commit (for example, `nix flake update hype` in the
 consumer repository) and rebuild your workstation. A GitHub push alone does not
@@ -157,7 +165,7 @@ nix flake check
 To update Hype manually, run:
 
 ```bash
-nix run nixpkgs#nix-update -- hype --flake --use-github-releases
+nix develop .#maintenance --command nix-update hype --flake --use-github-releases
 nix flake check
 ```
 
@@ -165,16 +173,23 @@ Verify the GUI on your desktop. Updates may require adjusting dependencies or te
 
 ## Validation status
 
-Validated Hype 0.6.0 on 2026-10-17 with Nix 2.35.3 in an `x86_64-linux`
-container:
+Validated Hype 0.7.1 on `x86_64-linux`:
 
-- The source hash was verified with Nix's fetcher.
+- Reproduced the updater's missing-store-path failure with Nix 2.35.6 and
+  nix-update 1.16.0 on a fresh checkout.
+- The locked maintenance environment updated 0.6.0 to 0.7.1 and a second run
+  correctly reported that the version was already current.
 - `nix flake check --no-build --all-systems` passed for both exposed platforms.
-- `nix flake check -L` compiled the package and passed all 11 upstream headless
-  CLI tests against the installed executable, including the media fixture test,
-  PNG rendering and PDF/PowerPoint export.
+- The package uses upstream's CMake build and runs its 14 headless CLI tests
+  against the installed Qt wrapper, including PNG rendering and PDF/PowerPoint
+  export.
 
-**GUI use and the `aarch64-linux` build have not been verified.** Run
+The [Check workflow](.github/workflows/check.yml) checks updater evaluation and
+source hashing without selecting a new release, then builds and tests pull
+requests and pushes to `main`.
+
+**GUI use, the `aarch64-linux` build, and upstream's separate C++,
+export-specific and GUI-shutdown suites have not been verified.** Run
 `nix run . -- open` on your desktop to check the graphical editor; run
 `nix flake check` on an ARM64 Linux machine to validate that platform's build.
 

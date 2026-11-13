@@ -26,7 +26,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          nix run nixpkgs#nix-update -- hype --flake --use-github-releases
+          nix develop .#maintenance --command nix-update hype --flake --use-github-releases
           if git diff --quiet -- package.nix; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
