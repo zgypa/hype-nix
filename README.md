@@ -144,11 +144,7 @@ The workflow needs GitHub Actions write access to repository contents.
 
 The updater runs in `devShells.<system>.maintenance`: both `nix-update` and its
 Nix subprocesses come from `flake.lock`, not the machine's `nixpkgs` registry.
-This avoids daily toolchain changes independently of the package pin. In
-particular, Nix 2.35 copies flake sources lazily, while nix-update 1.16.0 assumes
-that the path returned by `nix flake metadata` already exists in the store.
-The locked maintenance environment uses Nix 2.34.8; recheck the update command
-when updating nixpkgs.
+After updating nixpkgs, check the maintenance command as well as the package build.
 
 If you consume this flake through another flake's `flake.lock`, update that lock
 file to pick up the new commit (for example, `nix flake update hype` in the
@@ -171,27 +167,32 @@ nix flake check
 
 Verify the GUI on your desktop. Updates may require adjusting dependencies or tests.
 
-## Validation status
-
-Validated Hype 0.7.1 on `x86_64-linux`:
-
-- Reproduced the updater's missing-store-path failure with Nix 2.35.6 and
-  nix-update 1.16.0 on a fresh checkout.
-- The locked maintenance environment updated 0.6.0 to 0.7.1 and a second run
-  correctly reported that the version was already current.
-- `nix flake check --no-build --all-systems` passed for both exposed platforms.
-- The package uses upstream's CMake build and runs its 14 headless CLI tests
-  against the installed Qt wrapper, including PNG rendering and PDF/PowerPoint
-  export.
+## Checks
 
 The [Check workflow](.github/workflows/check.yml) checks updater evaluation and
 source hashing without selecting a new release, then builds and tests pull
 requests and pushes to `main`.
 
-**GUI use, the `aarch64-linux` build, and upstream's separate C++,
-export-specific and GUI-shutdown suites have not been verified.** Run
-`nix run . -- open` on your desktop to check the graphical editor; run
-`nix flake check` on an ARM64 Linux machine to validate that platform's build.
+The package uses upstream's CMake build and runs the headless CLI suite against
+the installed Qt wrapper, including PNG rendering and PDF/PowerPoint export.
+The separate upstream C++, export-specific and GUI-shutdown suites are not run
+by the package checks.
+
+To evaluate both supported platforms without compiling:
+
+```bash
+nix flake check --no-build --all-systems
+```
+
+To build and run the package checks for the current platform:
+
+```bash
+nix flake check -L
+```
+
+Evaluation alone does not verify compilation or runtime behavior. Run the build
+checks on each target architecture and use `nix run . -- open` on your desktop
+to check the graphical editor.
 
 ## License
 
