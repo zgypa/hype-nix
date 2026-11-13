@@ -142,6 +142,10 @@ There is no commit when the pinned version is already current. If a build or tes
 fails, the workflow stops without pushing; it will retry on the next run.
 The workflow needs GitHub Actions write access to repository contents.
 
+The updater runs in `devShells.<system>.maintenance`: both `nix-update` and its
+Nix subprocesses come from `flake.lock`, not the machine's `nixpkgs` registry.
+After updating nixpkgs, check the maintenance command as well as the package build.
+
 If you consume this flake through another flake's `flake.lock`, update that lock
 file to pick up the new commit (for example, `nix flake update hype` in the
 consumer repository) and rebuild your workstation. A GitHub push alone does not
@@ -157,26 +161,38 @@ nix flake check
 To update Hype manually, run:
 
 ```bash
-nix run nixpkgs#nix-update -- hype --flake --use-github-releases
+nix develop .#maintenance --command nix-update hype --flake --use-github-releases
 nix flake check
 ```
 
 Verify the GUI on your desktop. Updates may require adjusting dependencies or tests.
 
-## Validation status
+## Checks
 
-Validated Hype 0.6.0 on 2026-10-17 with Nix 2.35.3 in an `x86_64-linux`
-container:
+The [Check workflow](.github/workflows/check.yml) checks updater evaluation and
+source hashing without selecting a new release, then builds and tests pull
+requests and pushes to `main`.
 
-- The source hash was verified with Nix's fetcher.
-- `nix flake check --no-build --all-systems` passed for both exposed platforms.
-- `nix flake check -L` compiled the package and passed all 11 upstream headless
-  CLI tests against the installed executable, including the media fixture test,
-  PNG rendering and PDF/PowerPoint export.
+The package uses upstream's CMake build and runs the headless CLI suite against
+the installed Qt wrapper, including PNG rendering and PDF/PowerPoint export.
+The separate upstream C++, export-specific and GUI-shutdown suites are not run
+by the package checks.
 
-**GUI use and the `aarch64-linux` build have not been verified.** Run
-`nix run . -- open` on your desktop to check the graphical editor; run
-`nix flake check` on an ARM64 Linux machine to validate that platform's build.
+To evaluate both supported platforms without compiling:
+
+```bash
+nix flake check --no-build --all-systems
+```
+
+To build and run the package checks for the current platform:
+
+```bash
+nix flake check -L
+```
+
+Evaluation alone does not verify compilation or runtime behavior. Run the build
+checks on each target architecture and use `nix run . -- open` on your desktop
+to check the graphical editor.
 
 ## License
 

@@ -2,7 +2,8 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  qmake,
+  cmake,
+  pkg-config,
   wrapQtAppsHook,
   qtbase,
   qtdeclarative,
@@ -24,17 +25,17 @@ assert lib.assertMsg (lib.versionAtLeast qtbase.version "6.9")
 
 stdenv.mkDerivation rec {
   pname = "hype";
-  version = "0.6.0";
+  version = "0.7.1";
 
   src = fetchFromGitHub {
     owner = "omacom";
     repo = "hype";
     # The fixed hash ensures the release tag cannot silently change the source.
     rev = "v${version}";
-    hash = "sha256-lDrDfo0LqGbWD8X7rejOYf9nKqyNNZh6wMlL9wRRJoU=";
+    hash = "sha256-LeON8trdFa2xlLkSnBDXkuXs2pL9wKzh/FQFay47+Rw=";
   };
 
-  nativeBuildInputs = [ qmake wrapQtAppsHook ];
+  nativeBuildInputs = [ cmake pkg-config wrapQtAppsHook ];
   buildInputs = [
     qtbase
     qtdeclarative
@@ -46,7 +47,11 @@ stdenv.mkDerivation rec {
     libwebp
   ];
 
-  qmakeFlags = [ "hype.pro" ];
+  # Upstream derives its version from the release directory name.
+  postUnpack = ''
+    mv "$sourceRoot" "hype-${version}"
+    sourceRoot="hype-${version}"
+  '';
   enableParallelBuilding = true;
 
   # These are external programs Hype starts through QProcess. Put them in
@@ -58,9 +63,9 @@ stdenv.mkDerivation rec {
   installPhase = ''
     runHook preInstall
     install -Dm755 hype "$out/bin/hype"
-    install -Dm644 pkgbuild/hype.desktop "$out/share/applications/hype.desktop"
-    install -Dm644 pkgbuild/hype.svg "$out/share/icons/hicolor/scalable/apps/hype.svg"
-    install -Dm644 LICENSE "$out/share/licenses/hype/LICENSE"
+    install -Dm644 ../pkgbuild/hype.desktop "$out/share/applications/hype.desktop"
+    install -Dm644 ../pkgbuild/hype.svg "$out/share/icons/hicolor/scalable/apps/hype.svg"
+    install -Dm644 ../LICENSE "$out/share/licenses/hype/LICENSE"
     runHook postInstall
   '';
 
@@ -73,7 +78,8 @@ stdenv.mkDerivation rec {
     export FONTCONFIG_FILE=${makeFontsConf {
       fontDirectories = [ dejavu_fonts ];
     }}
-    # Keep the script beside its fixtures, which it resolves via __file__.
+    # CMake builds out of tree; keep scripts beside their __file__ fixtures.
+    cd ..
     substituteInPlace tests/test_cli.py \
       --replace-fail "APP = Path(__file__).resolve().parents[1] / 'build/hype'" \
       "APP = Path('$out/bin/hype')"

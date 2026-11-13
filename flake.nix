@@ -33,6 +33,15 @@
         };
         in { hype = app; default = app; });
 
+      # Keep the updater and its Nix subprocesses on the same locked package set.
+      devShells = forAllSystems (system:
+        let pkgs = pkgsFor system;
+        in {
+          maintenance = pkgs.mkShellNoCC {
+            packages = [ pkgs.nix-update pkgs.nix ];
+          };
+        });
+
       checks = forAllSystems (system: {
         hype = self.packages.${system}.hype;
       });
